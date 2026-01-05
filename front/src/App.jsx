@@ -1,67 +1,136 @@
-import { useState } from 'react'
-import { db } from "./firebase_config";
-import {collection, query, orderBy, onSnapshot} from "firebase/firestore";
-
-
-
+import { useState, useEffect } from 'react'
+import { db } from "./firebase";
+import {collection, doc, getDocs, addDoc, serverTimestamp} from "firebase/firestore";
 
 function App() {
   // 나중에 Appwrite에서 가져올 데이터를 미리 상상해봅시다.
 
   // scraper/scraper.py에서 실행한 결과를 가져와서 화면에 뿌린다.
   // results : 38개의 json 객체를 담은 배열
+  const [projects, setProjects] = useState([]);
+  const [nickname, setNickname] = useState([]);
+  const [password, setPassword] = useState([]);
+  const [content, setContent] = useState([]);
+  
+  // 프로젝트 정보 추출
+  useEffect(() => {
+    const fetchData = async() => {
+      try{
+        const querySnapshot = await getDocs(collection(db, "project"));
+        // 데이터 매핑
+        const data = querySnapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id
+        }));
+        setProjects(data);
+      } catch(e) {
+        console.error("Error fetching data : ", e);
+      }
+    };
+    fetchData();
+  }, []);
+  
+  // 댓글 등록
+  const handleSubmit = async (projectId) => {
+    
+    if (!nickname || !content) {
+      alert("내용을 입력해주세요.");
+      return;
+    }
 
-  const [projects] = useState([
-    {
-      id: 1,
-      title: "컴퓨터융합학부 졸업프로젝트 팀원 모집 (React/Node)",
-      professor: "양희철",
-      roles: ["프론트엔드", "백엔드"],
-      stacks: ["react", "nodejs", "aws"],
-    },
-    // 더 많은 카드를 여기에 추가할 수 있습니다.
-  ]);
+    try {
+      await addDoc(collection(db, "comment"), {
+        Nickname: nickname,
+        Password: password,
+        Content: content,
+        Created: serverTimestamp(),
+        CommendId: Date.now(),
+        Project_id: doc(db, "project", projectId) // 현재 아코디언이 열린 프로젝트의 id
+      });
+      setContent(""); // 등록 후 입력창 초기화
+      alert("등록되었습니다.");
+    } catch(error) {
+      console.error("Error adding comment : ", error);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] p-4 md:p-10">
-      {/* 상단 탭 (이미지 1번 스타일) */}
-      <nav className="mb-8 flex gap-6 border-b pb-2 text-lg font-bold text-gray-400">
-        <span className="cursor-pointer text-black border-b-2 border-black pb-2">전체</span>
-        <span className="cursor-pointer hover:text-black">안녕</span>
-        <span className="cursor-pointer hover:text-black">스터디</span>
-      </nav>
-
-      {/* 필터 섹션 (이미지 2번 스타일) */}
-      <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex gap-2">
-          <button className="rounded-full border border-teal-400 bg-white px-4 py-1.5 text-sm font-bold text-teal-500 shadow-sm">👀 모집 중만 보기</button>
-        </div>
-        <input 
-          type="text" 
-          placeholder="제목, 글 내용을 검색해보세요." 
-          className="w-full max-w-xs rounded-full border bg-gray-100 px-5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 md:w-80"
-        />
+      <div>
+        안녕하세요
       </div>
+      <div>
+        <h2>프로젝트 목록(학생용)</h2>
+      </div>
+      <div className="grid divide-y divide-neutral-200 ">
+        {projects.map(project => (
+          <div className='p-2 bg-white rounded-lg border border-gray-1000 text-gray-900 text-sm font-medium-5 mt-2'>
+            <div key={project.id} className=''>
+              {/* 1. details 태그에 group 클래스를 부여하여 내부 요소 제어 */}
+              <details className="group">
+                {/* 2. summary는 항상 보이는 헤더 영역입니다. */}
+                <summary className="justify-between items-center font-medium cursor-pointer list-none">
+                  {/* 프로젝트 번호, 제목 */}
+                  <h3 className="text-sm font-bold text-gray-900 leading-tight">{project.title}</h3>
+                  {/* 메타 정보 */}
+                  <div className="flex items-center flex-wrap gap-2 text-sm text-gray-500 mt-2">
+                    <span> {project.professor}</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-600 text-white"> {project.status}</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"> {project.team}</span>
+                  </div>
+                  {/* 오른쪽: 화살표 아이콘 및 애니메이션 */}
+                  <span className="transition-transform duration-300 group-open:rotate-180 text-gray-400">
+                    <svg fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24">
+                      <path d="M6 9l6 6 6-6"></path>
+                    </svg>
+                  </span>
+                </summary>
 
-      {/* 게시글 그리드 레이아웃 */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {projects.map((p) => (
-          <div key={p.id} className="group relative rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl cursor-pointer">
-            <div className="mb-4 flex items-center gap-2">
-              <span className="rounded bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-500">📙 {p.tag}</span>
-              <span className="rounded bg-yellow-50 px-2 py-0.5 text-[10px] font-bold text-yellow-600">📦 따끈따끈 새 글</span>
-            </div>
-            <p className="mb-2 text-[11px] text-gray-400">마감일 | {p.deadline}</p>
-            <h3 className="mb-4 h-12 overflow-hidden text-ellipsis font-bold leading-tight line-clamp-2 group-hover:text-blue-600">
-              {p.title}
-            </h3>
-            <div className="mb-6 flex flex-wrap gap-1">
-              {p.roles.map(role => (
-                <span key={role} className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] text-blue-500">{role}</span>
-              ))}
-            </div>
-            <div className="flex items-center justify-between border-t pt-4 text-xs text-gray-500">
-              <span className="font-medium text-gray-700">{p.author}</span>
+                {/* 3. 펼쳐졌을 때만 보이는 댓글(아코디언 내용) 영역 */}
+                <div className="mt-4 border border-gray-200 rounded-lg bg-white overflow-hidden shadow-sm">
+                  <div className="flex flex-col md:flex-row">
+                    {/* 1. 왼쪽 입력 영역: 닉네임 및 비밀번호 */}
+                    <div className="w-full md:w-40 p-3 bg-gray-50 flex flex-col gap-2 border-b md:border-b-0 md:border-r border-gray-200">
+                      <input 
+                        type="text" 
+                        placeholder="이름" 
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                      <input 
+                        type="password" 
+                        placeholder="비밀번호"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)} 
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    {/* 2. 중앙 입력 영역: 댓글 본문 */}
+                    <div className="flex-1">
+                      <textarea 
+                        placeholder="내용을 입력하세요."
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        className="w-full h-24 md:h-full p-3 text-sm focus:outline-none resize-none placeholder:text-gray-400"
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  {/* 3. 하단 영역: 안내 문구 및 등록 버튼 */}
+                  <div className="flex justify-between items-center px-4 py-2 border-t border-gray-100 bg-white">
+                    <span className="text-[11px] text-gray-400 hidden sm:inline">
+                      Shift+Enter 키를 누르면 줄바꿈이 됩니다.
+                    </span>
+                    <button 
+                      onClick={() => handleSubmit(project.id)}
+                      className="ml-auto bg-indigo-600 text-white px-5 py-1.5 rounded text-sm font-bold hover:bg-indigo-700 transition-colors shadow-sm">
+                      등록
+                    </button>
+                  </div>
+                </div>
+              </details>
             </div>
           </div>
         ))}
@@ -69,5 +138,7 @@ function App() {
     </div>
   )
 }
+
+
 
 export default App
