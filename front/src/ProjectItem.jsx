@@ -117,7 +117,7 @@ function ProjectItem({project, handleUpdate, handleDelete}) {
                                 </div>
                             </div>
                             <div className='p-2 flex bg-gray-100  items-center gap-2 text-xs text-gray-500 '>                        
-                                <p>Shift + Enter : 줄바꿈 <br></br> 비밀번호 : 관리용 비밀번호</p>
+                                <p>Shift + Enter : 줄바꿈 <br></br> 비밀번호 : 수정/삭제용 비밀번호</p>
                             </div>
                         </div>
                     </form>
