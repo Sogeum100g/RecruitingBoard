@@ -30,12 +30,20 @@ function App() {
   
 
   return (
-    <div className=" max-w-5xl mx-auto mt-8 divide-y border-gray-200 rounded-lg overflow-hidden">
+    <div className="max-w-5xl mx-auto mt-8 divide-y border-gray-200 rounded-lg overflow-hidden">
+      <div class="rounded-xl bg-gradient-to-r from-indigo-900 to-blue-500 p-6 text-white shadow">
+        <h1 class="text-2xl font-bold">프로젝트 목록(학생용)</h1>
+        <p class="mt-2 text-sm opacity-90">
+          현재 모집중인 과제를 확인하고 팀을 구성하세요.
+        </p>
+      </div>
+
       {projects.map((project) => (
         // 1. key는 여기서 관리
         // 2. 전체 project 데이터를 'props'로 넘겨줌
         <ProjectItem key={project.id} project={project} />
       ))}
+      
     </div>
   )
 }
