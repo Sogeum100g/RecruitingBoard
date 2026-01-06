@@ -12,11 +12,9 @@ dist
 dist-ssr
 *.local
 
-# json and Config
+# Firebase and config, env
 serviceAccountKey.json
-firebase.config.js
 *.env*
-
 
 # Editor directories and files
 .vscode/*
