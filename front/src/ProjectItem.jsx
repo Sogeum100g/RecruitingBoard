@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { db } from "./firebase";
 import {collection, doc, addDoc, serverTimestamp, query, where, orderBy, onSnapshot, getDocs } from "firebase/firestore";
+import CommentItem from"./CommentItem"
 
-function ProjectItem({project}) {
+function ProjectItem({project, handleUpdate, handleDelete}) {
     
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
@@ -36,10 +37,7 @@ function ProjectItem({project}) {
 
     if (e) e.preventDefault();
 
-    if (!nickname || !password || !content) {
-      alert("내용을 입력해주세요.");
-      return;
-    }
+    if (!nickname || !password || !content || !content.trim()) return;
 
     try {
       await addDoc(collection(db, "comment"), {
@@ -48,23 +46,13 @@ function ProjectItem({project}) {
         Content: content,
         Created: serverTimestamp(),
         CommendId: Date.now(),
+        Updated: false,
         Project_id: doc(db, "project", project.id) // 현재 아코디언이 열린 프로젝트의 id
       });
       setContent(""); // 등록 후 입력창 초기화
-      alert("등록되었습니다.");
     } catch(error) {
       console.error("Error adding comment : ", error);
     }
-  }
-
-  // 댓글 수정
-  const handleUpdate = async (e) => {
-
-    const comment_password = await getDocs(collection(db, "comment"), {
-        Password: password,
-        Project_id: doc(db, "project", project.id)
-    });
-    
   }
 
   // 모집 상태 표시
@@ -81,7 +69,7 @@ function ProjectItem({project}) {
             <details className="group">
                 <summary className="flex justify-between items-center p-4 cursor-pointer list-none">
                 <div>
-                    <h3 className="text-sm font-bold text-gray-900">{project.title}</h3>
+                    <h3 className="text-sm font-bold text-gray-900">{project.title} <span className="text-gray-600">[{comments.length}]</span></h3>
                     <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                         <span>{project.professor}</span>
                         <span className={`px-2 py-0.5 rounded-full ${statusColor[project.status]} text-white`}>{project.status}</span>
@@ -100,16 +88,16 @@ function ProjectItem({project}) {
                     <form onSubmit={handleSubmit} className=''>
                         <div className="border border-gray-200 rounded-lg bg-white overflow-hidden mb-4">
                             <div className="flex flex-col md:flex-row">
-                                <div className="w-full md:w-40 p-3 bg-gray-50 flex flex-col gap-2 border-r border-gray-200">
+                                <div className="w-full md:w-40 p-3 bg-gray-100 flex flex-col gap-2 border-r border-gray-200">
                                     <input 
                                     type="text" placeholder="이름" value={nickname}
                                     onChange={(e) => setNickname(e.target.value)}
-                                    className="w-full border p-1.5 text-xs rounded focus:ring-1 focus:ring-indigo-500 outline-none"
+                                    className="w-full border border-gray-300  p-1.5 text-xs rounded focus:ring-1 focus:ring-indigo-500 outline-none"
                                     />
                                     <input 
                                     type="password" placeholder="비밀번호" value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full border p-1.5 text-xs rounded focus:ring-1 focus:ring-indigo-500 outline-none"
+                                    className="w-full border border-gray-300  p-1.5 text-xs rounded focus:ring-1 focus:ring-indigo-500 outline-none"
                                     />
                                 </div>
                                 <textarea 
@@ -133,51 +121,22 @@ function ProjectItem({project}) {
                                     </button>
                                 </div>
                             </div>
-                            <div className='p-2 flex items-center gap-2 text-xs text-gray-500 mt-1'>                        
-                                <p>Shift + Enter : 줄바꿈</p>
+                            <div className='p-2 flex bg-gray-100  items-center gap-2 text-xs text-gray-500 '>                        
+                                <p>Shift + Enter : 줄바꿈 <br></br> 비밀번호 : 관리용 비밀번호</p>
                             </div>
                         </div>
                     </form>
                     {/* 실시간 댓글 목록 출력 영역 */}
                     <div className="space-y-3">
                         {comments.map((comment) => (
-                        <div key={comment.id} className="bg-white p-3 rounded border border-gray-200 shadow-sm">
-                            <div className="flex justify-between items-center mb-1">
-                            <span className="font-bold text-xs text-indigo-700">{comment.Nickname}</span>
-                            <span className="text-[10px] text-gray-400">
-                                {comment.Created?.toDate().toLocaleString()} {/* Timestamp 변환 */}
-                            </span>
-                            </div>
-                            {/* 전체를 감싸는 컨테이너: 가로 배치(flex) */}
-                            <div className="flex border border-gray-300 rounded-sm bg-white overflow-hidden">
-                            
-                            {/* 1. 왼쪽: 본문 내용 (가변 너비) */}
-                            <div className="flex-1 p-3 min-h-[100px] border-r border-gray-300 text-sm whitespace-pre-wrap">
-                                {comment.Content}
-                            </div>
-
-                            {/* 2. 오른쪽: 버튼 및 입력창 영역 (고정 너비, 위로 정렬) */}
-                            <div className="w-32 p-2 flex flex-col gap-2 items-center justify-start"> 
-                                {/* justify-start가 버튼들을 '위'로 밀어올립니다 */}
-                                
-                                <div className="flex gap-1">
-                                <button className="bg-gray-600 text-white p-2 rounded text-xs font-bold hover:bg-gray-700">
-                                    수정
-                                </button>
-                                <button className="bg-gray-600 text-white p-2 rounded text-xs font-bold hover:bg-gray-700">
-                                    삭제
-                                </button>
-                                </div>
-
-                                {/* 비밀번호 입력창 (2번 사진 하단 박스) */}
-                                <input 
-                                type="password" 
-                                placeholder="비밀번호" 
-                                className="w-full border border-gray-400 rounded-md px-2 py-1 text-xs outline-none"
-                                />
-                            </div>
-                            </div>
-                        </div>
+                        // 1. key는 여기서 관리합니다.
+                        // 2. 전체 project 데이터를 'props'로 넘겨줍니다.
+                        <CommentItem 
+                            key={comment.id} 
+                            comment={comment} 
+                            handleUpdate={handleUpdate} 
+                            handleDelete={handleDelete}                            
+                        />
                         ))}
                     </div>
                 </div>
