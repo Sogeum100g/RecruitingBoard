@@ -16,7 +16,7 @@ async def scrape_project_list():
     url = "https://script.google.com/macros/s/AKfycbw-3wum0h3gMxEQgK8P3ORktUkiyqOF3EQrLcWjoeRXyQaKCgTHJ7I_bp6NhtBH9jEB/exec"
     print(f"접속중 : {url}", url)
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
+        browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
 
         await page.goto(url, wait_until="domcontentloaded", timeout=60000)
